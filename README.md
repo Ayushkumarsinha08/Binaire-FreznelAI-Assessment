@@ -95,64 +95,6 @@ graph TD
 
 > **Assessment Question**: *How will you solve the problem of fetching model data without using async/await?*
 
-#### Implementation Architecture:
-In `src/api/ModelService.ts`, the method `fetchModelsWithoutAsyncAwait()` exclusively utilizes standard ES6 **Promise chaining**:
-
-```typescript
-public fetchModelsWithoutAsyncAwait(externalSignal?: AbortSignal): Promise<ModelData[]> {
-  if (this.activeRequestPromise) {
-    return this.activeRequestPromise; // Deduplicate in-flight requests
-  }
-
-  const controller = new AbortController();
-  this.activeAbortController = controller;
-
-  const fetchPromise: Promise<ModelData[]> = fetch(this.apiUrl, {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-    signal: controller.signal,
-  })
-    .then((response: Response) => {
-      // 1. HTTP Error Handling
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} (${response.statusText}): Failed to download models.`);
-      }
-      // 2. Stream parsing into JSON Promise
-      return response.json();
-    })
-    .then((data: unknown) => {
-      // 3. Schema & structural validation
-      if (!validateRawApiResponse(data)) {
-        throw new Error('Malformed API Response: Missing or invalid "models" array.');
-      }
-      // 4. Defensive normalization into indexed ModelData[]
-      const normalized = normalizeModels(data.models);
-      if (normalized.length === 0) {
-        throw new Error('Empty Dataset: API returned zero valid model records.');
-      }
-      return normalized;
-    })
-    .catch((error: Error) => {
-      // 5. Error interception & descriptive mapping
-      if (error.name === 'AbortError') {
-        throw new Error('Model fetch was cancelled by client.');
-      }
-      throw error;
-    })
-    .finally(() => {
-      // 6. In-flight request lock cleanup
-      if (this.activeRequestPromise === fetchPromise) {
-        this.activeRequestPromise = null;
-      }
-      if (this.activeAbortController === controller) {
-        this.activeAbortController = null;
-      }
-    });
-
-  this.activeRequestPromise = fetchPromise;
-  return fetchPromise;
-}
-```
 
 #### Key Technical Principles:
 1. **Promise Propagation**: `fetch()` returns a `Promise<Response>`. Calling `.json()` returns a `Promise<any>`. Returning values from inside `.then()` handlers automatically wraps them in resolved Promises, enabling seamless sequential pipelining.
