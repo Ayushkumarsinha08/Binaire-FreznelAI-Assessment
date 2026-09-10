@@ -4,6 +4,11 @@ import { validateRawApiResponse } from '../utils/validation';
 
 export const API_ENDPOINT = 'https://binaire.app/hf-models-api.json';
 
+const configuredApiEndpoint =
+  typeof window !== 'undefined'
+    ? import.meta.env?.VITE_MODEL_API_URL || '/api/models'
+    : API_ENDPOINT;
+
 /**
  * ModelService
  *
@@ -24,7 +29,7 @@ export class ModelService {
   private activeRequestPromise: Promise<ModelData[]> | null = null;
   private activeAbortController: AbortController | null = null;
 
-  constructor(apiUrl: string = API_ENDPOINT) {
+  constructor(apiUrl: string = configuredApiEndpoint) {
     this.apiUrl = apiUrl;
   }
 
@@ -104,6 +109,11 @@ export class ModelService {
         // Step 5: Descriptive error mapping
         if (error.name === 'AbortError') {
           throw new Error('Model fetch was cancelled by the client.');
+        }
+        if (error instanceof TypeError) {
+          throw new Error(
+            'Unable to fetch model data. Check the API URL and its CORS policy; the browser blocked or could not reach the request.'
+          );
         }
         // Propagate the descriptive error
         throw error;

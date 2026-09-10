@@ -14,6 +14,13 @@ export default defineConfig({
   server: {
     port: 5173,
     open: false,
+    proxy: {
+      '/api/models': {
+        target: 'https://binaire.app',
+        changeOrigin: true,
+        rewrite: () => '/hf-models-api.json',
+      },
+    },
   },
   test: {
     globals: true,

@@ -376,6 +376,22 @@ To preview the production bundle locally:
 npm run preview
 ```
 
+## Firebase Hosting Deployment
+
+The production app calls `/api/models`, which Firebase Hosting rewrites to the
+`modelsProxy` Cloud Function. This keeps the upstream API request server-side
+and avoids browser CORS failures.
+
+Install the Firebase CLI, authenticate, select the Firebase project, and deploy:
+
+```bash
+npm install -g firebase-tools
+firebase login
+firebase use binaire-model-assessment
+npm run build
+firebase deploy --only functions,hosting
+```
+
 ---
 
 ## Functional Audit & Verification Matrix

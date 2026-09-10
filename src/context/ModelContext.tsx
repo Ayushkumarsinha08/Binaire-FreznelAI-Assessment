@@ -134,7 +134,6 @@ export const ModelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setError(null);
       networkService.reportRequestSuccess();
     } catch (err: any) {
-      networkService.reportRequestFailure();
       // If we already have models in state (from cache), keep them and display recoverable notification
       if (models.length > 0) {
         setError(`Unable to refresh live data (${err.message || 'Network error'}). Showing your cached dataset.`);
